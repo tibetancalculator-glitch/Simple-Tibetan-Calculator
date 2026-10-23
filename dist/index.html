@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#69130f" />
+    <meta name="description" content="A simple, beautiful calculator made for Tibetan numerals." />
+    <title>Tibetan Calculator · བོད་ཀྱི་རྩིས་འཕྲུལ།</title>
+    <link rel="icon" href="assets/app-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="nav" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Tibetan Calculator home">
+        <img src="assets/app-icon.png" alt="" />
+        <span><b>བོད་ཀྱི་རྩིས་འཕྲུལ།</b><small>Tibetan Calculator</small></span>
+      </a>
+      <nav>
+        <a href="#calculator">Calculator</a>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+      </nav>
+      <a class="nav-cta" href="#calculator">Try it now <span aria-hidden="true">↘</span></a>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="sun-disc" aria-hidden="true"></div>
+        <div class="hero-copy reveal">
+          <p class="eyebrow"><span></span> MADE FOR TIBETAN NUMERALS</p>
+          <h1>Calculate in the<br /><em>language of Tibet.</em></h1>
+          <p class="lede">A calm, modern calculator that makes everyday arithmetic feel native—using Tibetan digits from the first tap to the final answer.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#calculator">Open web calculator <span>→</span></a>
+            <a class="button quiet" href="#features">Discover the app</a>
+          </div>
+          <div class="digit-row" aria-label="Tibetan digits zero through nine">
+            <span>༠</span><span>༡</span><span>༢</span><span>༣</span><span>༤</span><span>༥</span><span>༦</span><span>༧</span><span>༨</span><span>༩</span>
+          </div>
+        </div>
+
+        <div class="hero-art reveal delay-1" aria-label="Tibetan Calculator preview">
+          <div class="ornament top"></div>
+          <div class="phone-shell">
+            <div class="phone-top"><i></i><span>རྩིས་འཕྲུལ།</span><button type="button" data-scroll-history aria-label="Show history">↺</button></div>
+            <div class="phone-display"><small>༡༢༥ × ༨</small><strong>༡,༠༠༠</strong></div>
+            <div class="phone-keys" aria-hidden="true">
+              <b class="soft">གཙང་།</b><b class="soft">(</b><b class="soft">)</b><b class="soft">⌫</b>
+              <b>༧</b><b>༨</b><b>༩</b><b class="gold">÷</b>
+              <b>༤</b><b>༥</b><b>༦</b><b class="gold">×</b>
+              <b>༡</b><b>༢</b><b>༣</b><b class="gold">−</b>
+              <b>༠</b><b>.</b><b>%</b><b class="equal">=</b>
+            </div>
+          </div>
+          <div class="stamp">བོད་<small>MADE WITH CARE</small></div>
+          <div class="ornament bottom"></div>
+        </div>
+      </section>
+
+      <section class="statement" id="features">
+        <p class="section-no">01 — WHY IT FEELS DIFFERENT</p>
+        <h2>Familiar maths.<br /><em>A more familiar script.</em></h2>
+        <div class="feature-grid">
+          <article><span>༡</span><h3>Tibetan-first</h3><p>Enter and read every calculation in Tibetan numerals, without translating in your head.</p></article>
+          <article><span>༢</span><h3>Everyday arithmetic</h3><p>Add, subtract, multiply, divide, use percentages and group expressions with parentheses.</p></article>
+          <article><span>༣</span><h3>Private by design</h3><p>Your calculations stay on your device. There is no account and no personal data collection.</p></article>
+        </div>
+      </section>
+
+      <section class="calculator-section" id="calculator">
+        <div class="calc-intro">
+          <p class="section-no">02 — TRY IT IN YOUR BROWSER</p>
+          <h2>Your numbers,<br /><em>in Tibetan.</em></h2>
+          <p>Use the keypad or your keyboard. The calculator supports Tibetan and Western digits and always returns the result in Tibetan.</p>
+          <div class="translation-card"><span>Western</span><b>125 × 8</b><i>becomes</i><span>Tibetan</span><b>༡༢༥ × ༨</b></div>
+        </div>
+
+        <div class="calculator" aria-label="Interactive Tibetan calculator">
+          <div class="calc-head"><span>བོད་ཀྱི་རྩིས་འཕྲུལ།</span><button id="historyButton" aria-expanded="false" aria-controls="historyPanel">History <b>↺</b></button></div>
+          <div class="display" aria-live="polite">
+            <div id="expression">༡༢༥ × ༨</div>
+            <output id="result">༡,༠༠༠</output>
+            <p id="error" role="alert"></p>
+          </div>
+          <div class="keypad">
+            <button class="utility" data-action="clear">གཙང་།</button><button class="utility" data-value="(">(</button><button class="utility" data-value=")">)</button><button class="utility" data-action="backspace">⌫</button>
+            <button data-value="༧">༧</button><button data-value="༨">༨</button><button data-value="༩">༩</button><button class="operator" data-value="/">÷</button>
+            <button data-value="༤">༤</button><button data-value="༥">༥</button><button data-value="༦">༦</button><button class="operator" data-value="*">×</button>
+            <button data-value="༡">༡</button><button data-value="༢">༢</button><button data-value="༣">༣</button><button class="operator" data-value="-">−</button>
+            <button data-value="༠">༠</button><button data-value=".">.</button><button data-value="%">%</button><button class="operator" data-value="+">+</button>
+            <button class="equals" data-action="equals">Calculate <span>=</span></button>
+          </div>
+          <aside class="history" id="historyPanel" hidden>
+            <div><strong>Recent calculations</strong><button id="clearHistory">Clear</button></div>
+            <ol id="historyList"><li>No calculations yet.</li></ol>
+          </aside>
+        </div>
+      </section>
+
+      <section class="about" id="about">
+        <img src="assets/app-icon.png" alt="Tibetan Calculator app icon" />
+        <div><p class="section-no">03 — A SMALL TOOL WITH A CLEAR PURPOSE</p><h2>Rooted in culture.<br /><em>Built for today.</em></h2><p>Tibetan Calculator brings a familiar daily tool into Tibetan script with a focused interface, clear typography and no distractions.</p></div>
+        <div class="about-note"><span>༄༅།</span><p>Designed to make Tibetan numerals more visible in everyday digital life.</p></div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-brand"><img src="assets/app-icon.png" alt="" /><span><b>བོད་ཀྱི་རྩིས་འཕྲུལ།</b><small>Tibetan Calculator</small></span></div>
+      <p>Simple arithmetic. Beautifully Tibetan.</p>
+      <div><a href="#top">Back to top ↑</a><small>© 2026 Tibetan Calculator</small></div>
+    </footer>
+    <script src="app.js"></script>
+  </body>
+</html>
