@@ -7,6 +7,8 @@ const historyButton = document.querySelector("#historyButton");
 const historyList = document.querySelector("#historyList");
 let expression = "";
 let history = [];
+let calculated = false;
+let lastResult = "";
 
 const toArabic = value => [...value].map(char => {
   const index = tibetanDigits.indexOf(char);
@@ -34,17 +36,22 @@ function evaluate(source) {
   };
   const parseTerm = () => {
     let value = parseUnary();
-    while (["*", "/", "%"].includes(tokens[position])) {
+    while (["*", "/"].includes(tokens[position])) {
       const op = tokens[position++]; const right = parseUnary();
-      if ((op === "/" || op === "%") && right === 0) throw new Error("Cannot divide by zero");
-      value = op === "*" ? value * right : op === "/" ? value / right : value % right;
+      if (op === "/" && right === 0) throw new Error("Cannot divide by zero");
+      value = op === "*" ? value * right : value / right;
     }
     return value;
   };
   const parseUnary = () => {
     if (tokens[position] === "+") { position++; return parseUnary(); }
     if (tokens[position] === "-") { position++; return -parseUnary(); }
-    return parsePrimary();
+    return parsePostfix();
+  };
+  const parsePostfix = () => {
+    let value = parsePrimary();
+    while (tokens[position] === "%") { position++; value /= 100; }
+    return value;
   };
   const parsePrimary = () => {
     if (tokens[position] === "(") {
@@ -70,12 +77,15 @@ function render() {
 
 function calculate() {
   try {
+    const original = expression;
     const raw = evaluate(expression);
     const formatted = Number(raw).toLocaleString("en-US", { maximumFractionDigits: 10, useGrouping: true });
     const result = toTibetan(formatted);
     resultEl.textContent = result;
-    history.unshift({ expression: pretty(expression), result });
+    history.unshift({ expression: pretty(original), result });
     history = history.slice(0, 8);
+    lastResult = raw;
+    calculated = true;
     renderHistory();
   } catch (error) {
     errorEl.textContent = error.message;
@@ -86,19 +96,58 @@ function renderHistory() {
   historyList.innerHTML = history.length ? history.map(item => `<li><span>${item.expression}</span><b>${item.result}</b></li>`).join("") : "<li>No calculations yet.</li>";
 }
 
+function append(value, operation = false) {
+  const isPercent = value === "%";
+  if (calculated) {
+    expression = operation || isPercent ? lastResult : "";
+    if (!operation && !isPercent) resultEl.textContent = "༠";
+  }
+  calculated = false;
+
+  const endsWithNumber = /[0-9༠-༩]$/.test(expression);
+  const startsWithNumber = /^[0-9༠-༩.]/.test(value);
+
+  if (startsWithNumber && expression.endsWith("%")) {
+    if (expression.length + value.length + 1 > 64) return;
+    expression += `*${value}`;
+    render();
+    return;
+  }
+
+  if (isPercent) {
+    if (!endsWithNumber && !expression.endsWith(")")) return;
+    if (expression.length < 64) expression += value;
+    render();
+    return;
+  }
+
+  if (operation) {
+    if (!expression && value !== "-") return;
+    if (/[+\-*/]$/.test(expression)) {
+      expression = `${expression.slice(0, -1)}${value}`;
+      render();
+      return;
+    }
+  }
+
+  if (expression.length + value.length <= 64) expression += value;
+  render();
+}
+
 document.querySelector(".keypad").addEventListener("click", event => {
   const key = event.target.closest("button"); if (!key) return;
-  if (key.dataset.action === "clear") { expression = ""; resultEl.textContent = "༠"; render(); return; }
-  if (key.dataset.action === "backspace") { expression = expression.slice(0, -1); render(); return; }
+  if (key.dataset.action === "clear") { expression = ""; lastResult = ""; calculated = false; resultEl.textContent = "༠"; render(); return; }
+  if (key.dataset.action === "backspace") { expression = expression.slice(0, -1); calculated = false; render(); return; }
   if (key.dataset.action === "equals") { calculate(); return; }
-  if (expression.length < 64) expression += key.dataset.value; render();
+  append(key.dataset.value, key.classList.contains("operator"));
 });
 
 document.addEventListener("keydown", event => {
-  if (/^[0-9()+\-*/%.]$/.test(event.key)) { expression += event.key; render(); }
+  if (/^[0-9()%.]$/.test(event.key)) append(event.key);
+  else if (/^[+\-*/]$/.test(event.key)) append(event.key, true);
   else if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculate(); }
-  else if (event.key === "Backspace") { expression = expression.slice(0, -1); render(); }
-  else if (event.key === "Escape") { expression = ""; resultEl.textContent = "༠"; render(); }
+  else if (event.key === "Backspace") { expression = expression.slice(0, -1); calculated = false; render(); }
+  else if (event.key === "Escape") { expression = ""; lastResult = ""; calculated = false; resultEl.textContent = "༠"; render(); }
 });
 
 historyButton.addEventListener("click", () => {
