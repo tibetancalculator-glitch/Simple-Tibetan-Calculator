@@ -16,7 +16,63 @@ const toArabic = value => [...value].map(char => {
 }).join("");
 
 const toTibetan = value => String(value).replace(/\d/g, digit => tibetanDigits[Number(digit)]);
-const pretty = value => toTibetan(value.replace(/\*/g, " × ").replace(/\//g, " ÷ ").replace(/-/g, " − ").replace(/\+/g, " + "));
+const pretty = value => toTibetan(value.replace(/\*/g, "×").replace(/\//g, " ÷ ").replace(/-/g, " − ").replace(/\+/g, " + "));
+
+const gcd = (a, b) => {
+  a = a < 0n ? -a : a;
+  b = b < 0n ? -b : b;
+  while (b !== 0n) [a, b] = [b, a % b];
+  return a;
+};
+
+class Rational {
+  constructor(numerator, denominator = 1n) {
+    if (denominator === 0n) throw new Error("Cannot divide by zero");
+    const divisor = gcd(numerator, denominator);
+    const sign = denominator < 0n ? -1n : 1n;
+    this.numerator = numerator / divisor * sign;
+    this.denominator = denominator / divisor * sign;
+  }
+
+  static parse(source) {
+    const [whole, fraction] = source.split(".");
+    if (fraction === undefined) return new Rational(BigInt(whole));
+    const denominator = 10n ** BigInt(fraction.length);
+    return new Rational(BigInt(`${whole || "0"}${fraction}`), denominator);
+  }
+
+  add(other) { return new Rational(this.numerator * other.denominator + other.numerator * this.denominator, this.denominator * other.denominator); }
+  subtract(other) { return new Rational(this.numerator * other.denominator - other.numerator * this.denominator, this.denominator * other.denominator); }
+  multiply(other) { return new Rational(this.numerator * other.numerator, this.denominator * other.denominator); }
+  divide(other) { return new Rational(this.numerator * other.denominator, this.denominator * other.numerator); }
+  negate() { return new Rational(-this.numerator, this.denominator); }
+  abs() { return this.numerator < 0n ? this.negate() : this; }
+  compare(other) { return this.numerator * other.denominator < other.numerator * this.denominator ? -1 : this.numerator * other.denominator > other.numerator * this.denominator ? 1 : 0; }
+
+  toDecimal(maxFractionDigits = 10) {
+    const negative = this.numerator < 0n;
+    const numerator = negative ? -this.numerator : this.numerator;
+    let whole = numerator / this.denominator;
+    let remainder = numerator % this.denominator;
+    if (remainder === 0n) return `${negative ? "-" : ""}${whole}`;
+
+    const scale = 10n ** BigInt(maxFractionDigits);
+    let fraction = remainder * scale / this.denominator;
+    remainder = remainder * scale % this.denominator;
+    if (remainder * 2n >= this.denominator) fraction += 1n;
+    if (fraction >= scale) { whole += 1n; fraction -= scale; }
+
+    const fractionText = fraction.toString().padStart(maxFractionDigits, "0").replace(/0+$/, "");
+    return `${negative ? "-" : ""}${whole}${fractionText ? `.${fractionText}` : ""}`;
+  }
+}
+
+const formatWithGrouping = value => {
+  const negative = value.startsWith("-");
+  const [whole, fraction] = (negative ? value.slice(1) : value).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negative ? "-" : ""}${grouped}${fraction === undefined ? "" : `.${fraction}`}`;
+};
 
 function tokenize(source) {
   const tokens = source.match(/(?:\d+(?:\.\d*)?|\.\d+)|[()+\-*/%]/g) || [];
@@ -30,7 +86,7 @@ function evaluate(source) {
   const parseExpression = () => {
     let value = parseTerm();
     while (tokens[position] === "+" || tokens[position] === "-") {
-      const op = tokens[position++]; const right = parseTerm(); value = op === "+" ? value + right : value - right;
+      const op = tokens[position++]; const right = parseTerm(); value = op === "+" ? value.add(right) : value.subtract(right);
     }
     return value;
   };
@@ -38,19 +94,18 @@ function evaluate(source) {
     let value = parseUnary();
     while (["*", "/"].includes(tokens[position])) {
       const op = tokens[position++]; const right = parseUnary();
-      if (op === "/" && right === 0) throw new Error("Cannot divide by zero");
-      value = op === "*" ? value * right : value / right;
+      value = op === "*" ? value.multiply(right) : value.divide(right);
     }
     return value;
   };
   const parseUnary = () => {
     if (tokens[position] === "+") { position++; return parseUnary(); }
-    if (tokens[position] === "-") { position++; return -parseUnary(); }
+    if (tokens[position] === "-") { position++; return parseUnary().negate(); }
     return parsePostfix();
   };
   const parsePostfix = () => {
     let value = parsePrimary();
-    while (tokens[position] === "%") { position++; value /= 100; }
+    while (tokens[position] === "%") { position++; value = value.divide(new Rational(100n)); }
     return value;
   };
   const parsePrimary = () => {
@@ -60,13 +115,15 @@ function evaluate(source) {
       return value;
     }
     const token = tokens[position++];
-    if (!token || Number.isNaN(Number(token))) throw new Error("Complete the expression");
-    return Number(token);
+    if (!token || !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(token)) throw new Error("Complete the expression");
+    return Rational.parse(token);
   };
   if (!tokens.length) throw new Error("Enter a calculation");
   const value = parseExpression();
-  if (position !== tokens.length || !Number.isFinite(value)) throw new Error("Check the expression");
-  return Number.isInteger(value) ? String(value) : value.toFixed(10).replace(/0+$/, "").replace(/\.$/, "");
+  if (position !== tokens.length) throw new Error("Check the expression");
+  if (value.abs().compare(new Rational(10n ** 100n)) > 0) throw new Error("Result is outside supported range");
+  if (value.abs().compare(new Rational(1n, 10n ** 12n)) < 0) return "0";
+  return value.toDecimal(10);
 }
 
 function render() {
@@ -79,7 +136,7 @@ function calculate() {
   try {
     const original = expression;
     const raw = evaluate(expression);
-    const formatted = Number(raw).toLocaleString("en-US", { maximumFractionDigits: 10, useGrouping: true });
+    const formatted = formatWithGrouping(raw);
     const result = toTibetan(formatted);
     resultEl.textContent = result;
     history.unshift({ expression: pretty(original), result });
